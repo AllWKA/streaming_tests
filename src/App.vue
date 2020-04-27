@@ -1,19 +1,35 @@
 <template>
   <div id="app">
-    <img alt="Vue logo" src="./assets/logo.png">
-    <HelloWorld msg="Welcome to Your Vue.js App"/>
+    <p>server: http://localhost:3000</p>
+    <p>file: {{filePath}}</p>
+    <v-btn small @click="selectFile">select file</v-btn>
   </div>
 </template>
 
 <script>
-import HelloWorld from './components/HelloWorld.vue'
-
+const dialog = require('electron').remote.dialog;
+const axios = require('axios');
 export default {
   name: 'App',
-  components: {
-    HelloWorld
+  components: {},
+  data() {
+    return {
+      filePath: '',
+      serverPort: 0
+    };
+  },
+  methods: {
+    selectFile() {
+      dialog.showOpenDialog({properties: ['openFile']}).then(path => {
+        this.filePath = path.filePaths[0];
+        axios.post('http://localhost:3000/path',{path:path.filePaths[0]})
+      });
+    }
+  },
+  mounted() {
+    axios.get('http://localhost:3000/path').then(path => this.filePath = path.data)
   }
-}
+};
 </script>
 
 <style>
