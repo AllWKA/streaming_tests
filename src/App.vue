@@ -3,6 +3,10 @@
     <p>server: http://localhost:3000</p>
     <p>file: {{filePath}}</p>
     <v-btn small @click="selectFile">select file</v-btn>
+    <video id="videoPlayer" controls v-if="playerIsShown">
+      <source :src="'http://localhost:3000/resource'" type="video/mp4">
+    </video>
+    <v-btn @click="togglePlayer">toggle player</v-btn>
   </div>
 </template>
 
@@ -15,7 +19,8 @@ export default {
   data() {
     return {
       filePath: '',
-      serverPort: 0
+      serverPort: 0,
+      playerIsShown: false
     };
   },
   methods: {
@@ -24,6 +29,9 @@ export default {
         this.filePath = path.filePaths[0];
         axios.post('http://localhost:3000/path',{path:path.filePaths[0]})
       });
+    },
+    togglePlayer(){
+      this.playerIsShown = !this.playerIsShown
     }
   },
   mounted() {
