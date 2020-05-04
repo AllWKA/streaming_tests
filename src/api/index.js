@@ -14,21 +14,43 @@ app.use(smallLag);
 // ...or use as middleware for a specific route
 var bigLag = simulateLatency({min: 10000, max: 10000});
 
+let logs = '';
+let logsPath = './streamingLogs.txt';
+
+
 app.listen(config.port, () => {
   console.log('listening on port: 3000');
 });
 
+function saveLog(log) {
+  fs.writeFileSync(logsPath, logs += '\n[' + getDate() + '] ' + log, {flag: 'w+'});
+}
+
+function resetLog() {
+  fs.writeFileSync(logsPath, '', {flag: 'w+'});
+}
+
+function getDate() {
+  const date = new Date();
+  return date.getDay() + '/' + date.getMonth() + '/' + date.getFullYear() + ' - '
+    + date.getHours() + ':' + date.getMinutes() + ':' + date.getMilliseconds();
+}
+
+app.get('/logPath', (req, res) => {
+  res.send(logsPath);
+});
+
 app.get('/resource', bigLag, (req, res) => {
-  console.log('new request');
+  saveLog('*****New Request****');
   const path = JSON.parse(fs.readFileSync('./src/api/apiConfig.json')).path;
   const stat = fs.statSync(path);
   const fileSize = stat.size;
   const range = req.headers.range;
 
-  console.log('range:', range);
+  saveLog('range:' + JSON.stringify(range));
 
   if (range) {
-    console.log('there is range');
+    saveLog('There is range');
     const parts = range.replace(/bytes=/, '').split('-');
     const start = parseInt(parts[0], 10);
     const end = parts[1] ? parseInt(parts[1], 10) : fileSize - 1;
@@ -40,17 +62,17 @@ app.get('/resource', bigLag, (req, res) => {
       'Content-Length': chunkSize,
       'Content-Type': 'audio/*'
     };
-    console.log('head:', head);
+    saveLog('Head: ' + JSON.stringify(head));
     res.writeHead(206, head);
     file.pipe(res);
   } else {
-    console.log('no range');
+    saveLog('No Range');
     const head = {
       'Content-Length': fileSize,
       'Content-Type': 'video/mp4'
     };
     res.writeHead(200, head);
-    console.log('head:', head);
+    saveLog('Head: ' + JSON.stringify(head));
     fs.createReadStream(path).pipe(res);
   }
 });
@@ -60,8 +82,19 @@ app.get('/path', (req, res) => {
   res.json(JSON.parse(config).path);
 });
 
+app.post('/clearLogs', (req, res) => {
+  resetLog();
+  res.send('');
+});
+
 app.post('/path', (req, res) => {
   config.path = req.body.path;
   fs.writeFileSync('./src/api/apiConfig.json', JSON.stringify(config));
-  res.send('saludos');
+  res.send(config.path);
+});
+
+app.post('/logPath', (req, res) => {
+  config.logPath = req.body.path;
+  fs.writeFileSync('./src/api/apiConfig.json', JSON.stringify(config));
+  res.send(config.path);
 });
