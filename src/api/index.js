@@ -40,17 +40,14 @@ app.get('/logPath', (req, res) => {
   res.send(logsPath);
 });
 
-app.get('/resource', bigLag, (req, res) => {
-  saveLog('*****New Request****');
+app.get('/resource', (req, res) => {
+  saveLog('*****New Request From' + req.headers.referer + ' ****');
   const path = JSON.parse(fs.readFileSync('./src/api/apiConfig.json')).path;
   const stat = fs.statSync(path);
   const fileSize = stat.size;
   const range = req.headers.range;
-
   saveLog('range:' + JSON.stringify(range));
-
   if (range) {
-    saveLog('There is range');
     const parts = range.replace(/bytes=/, '').split('-');
     const start = parseInt(parts[0], 10);
     const end = parts[1] ? parseInt(parts[1], 10) : fileSize - 1;
@@ -62,11 +59,14 @@ app.get('/resource', bigLag, (req, res) => {
       'Content-Length': chunkSize,
       'Content-Type': 'audio/*'
     };
+    saveLog('parts:' + parts);
+    saveLog('start:' + start);
+    saveLog('end:' + end);
+    saveLog('chunkSize:' + chunkSize);
     saveLog('Head: ' + JSON.stringify(head));
     res.writeHead(206, head);
     file.pipe(res);
   } else {
-    saveLog('No Range');
     const head = {
       'Content-Length': fileSize,
       'Content-Type': 'video/mp4'
