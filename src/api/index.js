@@ -36,17 +36,31 @@ function getDate() {
     + date.getHours() + ':' + date.getMinutes() + ':' + date.getMilliseconds();
 }
 
+function printHeaders(header) {
+  for (const key in header) {
+    saveLog(key + ':    ' + (typeof header[key] === 'json' ? JSON.stringify(header[key]) : header[key]));
+  }
+}
+
 app.get('/logPath', (req, res) => {
   res.send(logsPath);
 });
 
-app.get('/resource', (req, res) => {
-  saveLog('*****New Request From' + req.headers.referer + ' ****');
+app.get('/resource', bigLag, (req, res) => {
+  saveLog('*****New Request From ****');
   const path = JSON.parse(fs.readFileSync('./src/api/apiConfig.json')).path;
   const stat = fs.statSync(path);
   const fileSize = stat.size;
   const range = req.headers.range;
+  console.log(req.method);
+  saveLog('req.method' + req.method);
+
+  printHeaders(req.headers);
+
+  saveLog('stat:' + JSON.stringify(stat));
+  saveLog('fileSize:' + fileSize);
   saveLog('range:' + JSON.stringify(range));
+
   if (range) {
     const parts = range.replace(/bytes=/, '').split('-');
     const start = parseInt(parts[0], 10);
@@ -69,7 +83,7 @@ app.get('/resource', (req, res) => {
   } else {
     const head = {
       'Content-Length': fileSize,
-      'Content-Type': 'video/mp4'
+      'Content-Type': 'audio/*'
     };
     res.writeHead(200, head);
     saveLog('Head: ' + JSON.stringify(head));
